@@ -1,0 +1,24 @@
+﻿@page "/"
+@using System.Globalization
+
+<PageTitle>Index</PageTitle>
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+
+<SurveyPrompt Title="@string.Concat("We are here @ ", DateTimeNow)" />
+<Counter></Counter>
+<Counter></Counter>
+<Counter></Counter>
+
+@code
+{
+    string DateTimeNow
+    {
+        get
+        {
+            return DateTime.Now.ToString(CultureInfo.CurrentUICulture);
+        }
+    }
+}

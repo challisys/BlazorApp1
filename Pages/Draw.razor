@@ -1,0 +1,64 @@
+﻿@page "/draw"
+@using Blazor.Extensions.Canvas.Canvas2D
+@using Blazor.Extensions
+@using Blazor.Extensions.Canvas.WebGL
+@using BlazorApp1.Models
+@inject IJSRuntime JS;
+
+<PageTitle>Drawing on a Canvas</PageTitle>
+
+<h1>Draw this thing</h1>
+
+<div id="canvasContainer" style="position: fixed; opacity: 1; width: 100%; height: 100%">
+    <BECanvas Width="800" Height="800" @ref="_canvas"></BECanvas>
+</div>
+
+@code {
+    private Canvas2DContext _context;
+
+    private Ball[] balls = new Ball[50];
+
+    protected BECanvasComponent _canvas;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var random = new Random();
+            for (var index = 0; index < balls.Length; index++)
+            {
+                balls[index] = new Ball(RandomColour(random), + random.Next(780), 20 + random.Next(780), 800, 800);
+            }
+            _context = await _canvas.CreateCanvas2DAsync();
+            await JS.InvokeAsync<object>("initGame", DotNetObjectReference.Create(this));
+        }
+
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    [JSInvokable]
+    public async ValueTask GameLoop(int screenWidth, int screenHeight)
+    {
+        await this._context.ClearRectAsync(0, 0, screenWidth, screenHeight);
+        await this._context.BeginBatchAsync();
+        for (var index = 0; index < balls.Length; index++)
+        {
+            balls[index].Update();
+            await DrawBallAsync(balls[index]);
+        }
+        await this._context.EndBatchAsync();
+    }
+
+    private async ValueTask DrawBallAsync(Ball thisBall)
+    {
+        await this._context.BeginPathAsync();
+        await this._context.ArcAsync(thisBall.X, thisBall.Y, Ball.Radius, 0, Math.PI * 2);
+        await this._context.SetFillStyleAsync(thisBall.Colour);
+        await this._context.FillAsync();
+        await this._context.ClosePathAsync();
+    }
+
+    private static string RandomColour(Random rand) =>
+        $"#{rand.Next(0xFFFFFF):X6}";
+
+}
